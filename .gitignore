@@ -1,0 +1,8 @@
+# LaTeX
+**/*.aux
+**/*.*latexmk
+**/*.fls
+**/*.log
+**/*.out
+**/*.gz
+**/*.pdf
