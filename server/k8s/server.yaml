@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cairo-auth-server-deployment
+  labels:
+    app: cairo-auth-server
+spec:
+  selector:
+    matchLabels:
+      app: cairo-auth-server
+  template:
+    metadata:
+      labels:
+        app: cairo-auth-server
+    spec:
+      containers:
+        - name: cairo-auth-server
+          image: cairo-auth-server
+          envFrom:
+            - configMapRef:
+                name: configs
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: 100Mi
+              cpu: 100m
+            limits:
+              memory: 200Mi
+              cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cairo-auth-server-service
+spec:
+  selector:
+    app: cairo-auth-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cairo-auth-server-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  # tls:
+  #   - hosts:
+  #       - cairo.test
+  #     secretName: cairo-auth-tls
+  rules:
+    - host: cairo.test
+      http:
+        paths:
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: cairo-auth-server-service
+                port:
+                  number: 80

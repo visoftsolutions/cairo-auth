@@ -20,12 +20,20 @@ func main(output_ptr: felt*) -> (output_ptr: felt*) {
     local fibonacci_claim_index;
     %{ ids.fibonacci_claim_index = program_input['fibonacci_claim_index'] %}
 
+    local x;
+    %{
+        import requests
+        resp = requests.get("https://ifconfig.me")
+        ids.x = resp.status_code
+    %}
+
     assert output_ptr[0] = fibonacci_claim_index;
     let res = fib(1, 1, fibonacci_claim_index);
     assert output_ptr[1] = res;
+    assert output_ptr[2] = x;
 
     // Return the updated output_ptr.
-    return (output_ptr=&output_ptr[2]);
+    return (output_ptr=&output_ptr[3]);
 }
 
 func fib(first_element: felt, second_element: felt, n: felt) -> felt {

@@ -1,0 +1,11 @@
+resources:
+  - server.yaml
+
+namespace: cairo-auth
+
+configMapGenerator:
+  - name: configs
+    env: configs.env
+
+generatorOptions:
+  disableNameSuffixHash: true
