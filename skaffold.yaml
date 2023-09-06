@@ -1,0 +1,15 @@
+apiVersion: skaffold/v4beta6
+kind: Config
+build:
+  platforms:
+    - linux/amd64
+  artifacts:
+    - image: cairo-auth-server
+      context: ./server
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  kustomize:
+    paths:
+      # - ./k8s
+      - ./server/k8s

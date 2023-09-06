@@ -1,0 +1,10 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cairo-auth-cert
+spec:
+  secretName: cairo-auth-tls
+  dnsNames:
+    - cairo.test
+  issuerRef:
+    name: selfsigned-issuer

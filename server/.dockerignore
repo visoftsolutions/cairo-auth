@@ -1,0 +1,58 @@
+# Git
+**/.git
+
+# Readme
+**/[Rr][Ee][Aa][Dd][Mm][Ee]
+**/[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd]
+
+# Ignores
+**/.gitignore
+**/.dockerignore
+**/.eslintignore
+**/.prettierignore
+
+# Docker
+**/Dockerfile
+**/*.dockerfile
+
+# k8s
+**/k8s/
+
+# Envs
+**/*.cargo/
+**/*.env
+**/*.local
+
+# Rust
+**/debug/
+**/target/
+**/*.rs.bk
+**/.rustfmt.toml
+**/.Makefile.toml
+
+# MSVC Windows builds of rustc generate these, which store debugging information
+**/*.pdb
+
+# IDEs and editors
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+**/*.swn
+**/*.swm
+**/*.swl
+**/*.swo
+**/*.swp
+**/*.bak
+**/*.un~
+**/Session.vim
+**/netrwhist
+
+# OS generated
+**/.DS_Store
+**/.DS_Store?
+**/._*
+**/.Spotlight-V100
+**/.Trashes
+**/ehthumbs.db
+**/Thumbs.db
