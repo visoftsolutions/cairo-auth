@@ -1,60 +1,100 @@
-# Project Execution Instructions 🚀
+# Cairo-Auth: Project Execution Instructions 🚀
 
-Ensure you have the prerequisites in place before you start.
+Before you dive into the project, ensure that the necessary prerequisites are in place. This guide will walk you through each step of setting up and running the project.
 
 ## Prerequisites
 
-- It's recommended to have `pyenv` installed. This will automatically select the right version of Python as defined in the `.python-version` file.
-- Alternatively, ensure you have `Python 3.9.17` installed.
+1. **Python Environment**:
+   - We highly recommend using `pyenv` for handling multiple Python versions. With `pyenv`, the required Python version will be selected automatically as per the `.python-version` file.
+   - If not using `pyenv`, ensure that `Python 3.9.17` is installed on your system.
 
-## Setup Steps
+## Initial Setup
 
-### 1. Create a Python virtual environment
+### Step 1: Create a Python virtual environment
 
 ```shell
 python -m venv .venv
 ```
 
-### 2. Activate the virtual environment
+### Step 2: Activate the virtual environment
 
-If you're on a Unix or MacOS system:
+- On Unix or MacOS systems:
 
 ```shell
 source .venv/bin/activate
 ```
 
-For Windows:
+- On Windows:
 
 ```shell
 .venv\Scripts\activate
 ```
 
-### 3. Install the necessary Python packages
+### Step 3: Install the necessary Python packages
 
 ```shell
 pip install -r requirements.txt
 ```
 
-### 4. Compile the CairoZero code
+### Step 4: Compile the CairoZero code
 
 ```shell
 ./scripts/1-compile.sh
 ```
 
-### 5. Run CairoZero program and produce a trace
+### Step 5: Execute the CairoZero program to produce a trace
 
 ```shell
 ./scripts/2-run.sh
 ```
 
-### 6. Generate CairoZero proof from the trace
+### Step 6: Generate a CairoZero proof from the trace
 
 ```shell
 ./scripts/3-prove.sh
 ```
 
-### 7. Verify the generated proof
+### Step 7: Verify the generated proof
 
 ```shell
 ./scripts/4-verify.sh
 ```
+
+## Minikube Environment Setup
+
+### Step 1: Configure Minikube DNS
+
+Set up the Minikube DNS environment on your machine to expose ingress hostnames. Refer to the official documentation here: [Minikube Ingress DNS Guide](https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/)
+
+### Step 2: Configure DNS server
+
+Update the `systemd-resolved` configuration to use `127.0.0.1` as your DNS server.
+Edit the `resolved.conf` file.
+
+#### **`/etc/systemd/resolved.conf`**
+
+```
+DNS=127.0.0.1
+```
+
+### Step 3: Start Minikube with necessary add-ons
+
+```shell
+minikube start --addons ingress,ingress-dns
+```
+
+### Step 4: Install cert-manager in your cluster
+
+```shell
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.4/cert-manager.yaml
+```
+
+### Step 5: Deploy the server application
+
+```shell
+skaffold run
+```
+
+### Step 6: Access the Application
+
+Open your preferred browser and navigate to the domain specified in the ingress, for example `https://cairo.test/`.
