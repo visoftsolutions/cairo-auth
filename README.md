@@ -1,100 +1,91 @@
-# Cairo-Auth: Project Execution Instructions 🚀
+# Cairo-Auth: Comprehensive Project Execution Guide 🚀
 
-Before you dive into the project, ensure that the necessary prerequisites are in place. This guide will walk you through each step of setting up and running the project.
+Welcome to the Cairo-Auth project! Before diving deep into the code and execution, it's pivotal to have the right environment and prerequisites in place. This comprehensive guide is designed to facilitate a smooth setup and execution process, ensuring you face minimal roadblocks.
 
-## Prerequisites
+For a broader overview of the Cairo language, refer to the official documentation: [CairoZero Documentation](https://docs.cairo-lang.org/0.12.0/hello_cairo/index.html).
 
-1. **Python Environment**:
-   - We highly recommend using `pyenv` for handling multiple Python versions. With `pyenv`, the required Python version will be selected automatically as per the `.python-version` file.
-   - If not using `pyenv`, ensure that `Python 3.9.17` is installed on your system.
+## 🧩 Prerequisites
 
-## Initial Setup
+### 1. **Python Environment**:
+   - It's strongly recommended to utilize `pyenv` for managing multiple Python versions. When using `pyenv`, the Python version dictated by the `.python-version` file will be automatically selected.
+   - If you choose not to use `pyenv`, ensure that your system has `Python 3.9.17` installed.
 
-### Step 1: Create a Python virtual environment
+## 🛠 Initial Setup
 
+### **Step 1:** Setting up a Python virtual environment
 ```shell
 python -m venv .venv
 ```
 
-### Step 2: Activate the virtual environment
+### **Step 2:** Activating the virtual environment
 
-- On Unix or MacOS systems:
-
+For Unix or MacOS systems:
 ```shell
 source .venv/bin/activate
 ```
-
-- On Windows:
-
+For Windows systems:
 ```shell
 .venv\Scripts\activate
 ```
 
-### Step 3: Install the necessary Python packages
-
+### **Step 3:** Installing the necessary Python packages
 ```shell
 pip install -r requirements.txt
 ```
 
-### Step 4: Compile the CairoZero code
-
+### **Step 4:** Compilation of CairoZero code
 ```shell
 ./scripts/1-compile.sh
 ```
 
-### Step 5: Execute the CairoZero program to produce a trace
-
+### **Step 5:** Execution of the CairoZero program to generate a trace
 ```shell
 ./scripts/2-run.sh
 ```
 
-### Step 6: Generate a CairoZero proof from the trace
-
+### **Step 6:** Generation of a CairoZero proof using the trace
 ```shell
 ./scripts/3-prove.sh
 ```
 
-### Step 7: Verify the generated proof
-
+### **Step 7:** Verification of the generated proof
 ```shell
 ./scripts/4-verify.sh
 ```
 
-## Minikube Environment Setup
+## 🌐 Minikube Environment Setup
 
-### Step 1: Configure Minikube DNS
+### **Step 1:** DNS Configuration for Minikube 
 
-Set up the Minikube DNS environment on your machine to expose ingress hostnames. Refer to the official documentation here: [Minikube Ingress DNS Guide](https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/)
+Ensure that the Minikube DNS environment is set up on your machine to expose ingress hostnames. For detailed steps, consult the official documentation: [Minikube Ingress DNS Guide](https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/).
 
-### Step 2: Configure DNS server
+### **Step 2:** DNS server configuration
 
-Update the `systemd-resolved` configuration to use `127.0.0.1` as your DNS server.
-Edit the `resolved.conf` file.
+Update the `systemd-resolved` configuration to point to `127.0.0.1` as your primary DNS server. This can be done by editing the `resolved.conf` file.
 
-#### **`/etc/systemd/resolved.conf`**
-
+#### `/etc/systemd/resolved.conf`:
 ```
 DNS=127.0.0.1
 ```
 
-### Step 3: Start Minikube with necessary add-ons
-
+### **Step 3:** Initiating Minikube with necessary add-ons
 ```shell
 minikube start --addons ingress,ingress-dns
 ```
 
-### Step 4: Install cert-manager in your cluster
-
+### **Step 4:** Installation of cert-manager in the cluster
 ```shell
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.4/cert-manager.yaml
 ```
 
-### Step 5: Deploy the server application
-
+### **Step 5:** Deployment of the server application
 ```shell
 skaffold run
 ```
 
-### Step 6: Access the Application
+### **Step 6:** Accessing the Application
 
-Open your preferred browser and navigate to the domain specified in the ingress, for example `https://cairo.test/`.
+Launch your preferred browser and navigate to the domain specified in the ingress. An example could be:
+```
+https://cairo.test/
+```
