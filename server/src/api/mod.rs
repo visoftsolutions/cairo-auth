@@ -1,4 +1,4 @@
-pub mod square;
+pub mod sqrt;
 
 pub async fn root() -> &'static str {
     "Hello, World!"

@@ -17,31 +17,19 @@ func main(output_ptr: felt*) -> (output_ptr: felt*) {
     alloc_locals;
 
     // Load fibonacci_claim_index and copy it to the output segment.
-    local fibonacci_claim_index;
-    %{ ids.fibonacci_claim_index = program_input['fibonacci_claim_index'] %}
+    local n;
+    %{ ids.n = program_input["n"] %}
 
-    local x;
+    local m;
     %{
         import requests
-        resp = requests.get("https://ifconfig.me")
-        ids.x = resp.status_code
+        resp = requests.post("https://cairo.test/sqrt", json={"n": ids.n}, verify=False)
+        ids.m = resp.json()["n"]
     %}
 
-    assert output_ptr[0] = fibonacci_claim_index;
-    let res = fib(1, 1, fibonacci_claim_index);
-    assert output_ptr[1] = res;
-    assert output_ptr[2] = x;
+    assert m * m = n;
+    assert output_ptr[0] = m;
 
     // Return the updated output_ptr.
-    return (output_ptr=&output_ptr[3]);
-}
-
-func fib(first_element: felt, second_element: felt, n: felt) -> felt {
-    if (n == 0) {
-        return second_element;
-    }
-
-    return fib(
-        first_element=second_element, second_element=first_element + second_element, n=n - 1
-    );
+    return (output_ptr=&output_ptr[1]);
 }
