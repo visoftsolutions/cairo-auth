@@ -1,10 +1,21 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: cairo-auth-cert
+  name: proxy-cert
 spec:
-  secretName: cairo-auth-tls
+  secretName: proxy-tls
   dnsNames:
-    - cairo.test
+    - proxy.test
+  issuerRef:
+    name: selfsigned-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-cert
+spec:
+  secretName: example-tls
+  dnsNames:
+    - example.test
   issuerRef:
     name: selfsigned-issuer
