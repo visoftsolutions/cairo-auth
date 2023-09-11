@@ -1,5 +1,5 @@
 resources:
-  - server.yaml
+  - proxy.yaml
 
 namespace: cairo-auth
 

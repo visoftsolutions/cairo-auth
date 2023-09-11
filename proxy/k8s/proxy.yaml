@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cairo-auth-server-deployment
+  name: proxy-deployment
   labels:
-    app: cairo-auth-server
+    app: proxy
 spec:
   selector:
     matchLabels:
-      app: cairo-auth-server
+      app: proxy
   template:
     metadata:
       labels:
-        app: cairo-auth-server
+        app: proxy
     spec:
       containers:
-        - name: cairo-auth-server
-          image: cairo-auth-server
+        - name: proxy
+          image: cairo-auth-proxy
           envFrom:
             - configMapRef:
                 name: configs
@@ -32,10 +32,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: cairo-auth-server-service
+  name: proxy-service
 spec:
   selector:
-    app: cairo-auth-server
+    app: proxy
   ports:
     - protocol: TCP
       port: 80
@@ -44,23 +44,23 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: cairo-auth-server-ingress
+  name: proxy-ingress
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   tls:
     - hosts:
-        - cairo.test
-      secretName: cairo-auth-tls
+        - proxy.test
+      secretName: proxy-tls
   rules:
-    - host: cairo.test
+    - host: proxy.test
       http:
         paths:
           - path: /(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: cairo-auth-server-service
+                name: proxy-service
                 port:
                   number: 80

@@ -14,7 +14,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(api::root))
-        .route("/sqrt", post(api::sqrt::root));
+        .route("/sqrt", post(api::sqrt::root))
+        .route("/request", post(api::request::root));
 
     tracing::info!("listening on {}", addr);
     axum::Server::bind(&addr)

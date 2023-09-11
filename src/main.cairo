@@ -23,7 +23,7 @@ func main(output_ptr: felt*) -> (output_ptr: felt*) {
     local m;
     %{
         import requests
-        resp = requests.post("https://cairo.test/sqrt", json={"n": ids.n}, verify=False)
+        resp = requests.post("https://proxy.test/sqrt", json={"n": ids.n}, verify=False)
         ids.m = resp.json()["n"]
     %}
 
