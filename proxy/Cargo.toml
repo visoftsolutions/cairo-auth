@@ -9,6 +9,7 @@ edition = "2021"
 axum = { version = "0.6", features = ["tracing"] }
 docopt = "1.1"
 env_logger = "0.10"
+hyper = { version = "0.14.27", features = ["full"] }
 log = { version = "0.4" }
 mio = { version = "0.8", features = ["net", "os-poll"] }
 pki-types = { package = "rustls-pki-types", version = "0.2" }
