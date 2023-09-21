@@ -4,30 +4,22 @@ use std::{
     sync::Arc,
 };
 
-use axum::{
-    body::Body,
-    http::Request,
-    middleware,
-    response::{IntoResponse, Response},
-    routing::{get, post},
-    Router,
-};
-use rustls::{ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
+use axum::http::Request;
+use rustls::{ClientConfig, ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
 
-use crate::api::request;
+fn serialize_request<T>(req: Request<T>) -> String {
+    let (parts, _body) = req.into_parts();
 
-pub async fn call(mut req: Request<Body>) {
-    println!("call req: {:?}", req);
-    println!("call method: {:?}", req.method());
-    println!("call uri: {:?}", req.uri());
-    println!("call headers: {:?}", req.headers());
-    println!("call extensions: {:?}", req.extensions());
+    let mut result = format!("{} {} {:?}\r\n", parts.method, parts.uri, parts.version);
+    for (key, value) in parts.headers.iter() {
+        let header_value_str: &str = value.to_str().unwrap_or_default();
+        result.push_str(&format!("{}: {}\r\n", key, header_value_str));
+    }
+    result.push_str("\r\n");
+    result
+}
 
-    req.headers().iter().for_each(|(k, v)| {
-        println!("call header: {:?}={:?}", k, v);
-    });
-
-    println!("++++++++++++++++++++++++++");
+pub fn rustls_config() -> ClientConfig {
     let mut root_store = RootCertStore::empty();
 
     root_store.add_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
@@ -37,7 +29,7 @@ pub async fn call(mut req: Request<Body>) {
         OwnedTrustAnchor::from_subject_spki_name_constraints(subject, spki, nc)
     }));
 
-    let mut config = rustls::ClientConfig::builder()
+    let mut config = ClientConfig::builder()
         .with_safe_defaults()
         .with_root_certificates(root_store)
         .with_no_client_auth();
@@ -46,20 +38,35 @@ pub async fn call(mut req: Request<Body>) {
     config.key_log = Arc::new(rustls::KeyLogFile::new());
     config.enable_secret_extraction = true;
 
-    let server_name = "www.rust-lang.org".try_into().unwrap();
-    let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
+    config
+}
 
-    let mut sock = TcpStream::connect("www.rust-lang.org:443").unwrap();
+pub async fn call<T>(req: Request<T>) {
+    let config = Arc::new(rustls_config()); // TODO: move to global state
+
+    let host_value = req
+        .headers()
+        .get("host")
+        .expect("Host not present in request")
+        .to_str()
+        .expect("Host is not a valid header value");
+    let server_name = host_value.try_into().expect("Host is not a valid DNS name");
+
+    let mut conn = rustls::ClientConnection::new(config, server_name).unwrap();
+    let mut sock = TcpStream::connect([host_value, "443"].join(":")).unwrap();
     let mut tls = rustls::Stream::new(&mut conn, &mut sock);
 
+    let request_bytes = serialize_request(req);
+
     tls.write_all(
-        concat!(
-            "GET / HTTP/1.1\r\n",
-            "host: example.com\r\n",
-            "connection: close\r\n",
-            "\r\n"
-        )
-        .as_bytes(),
+        request_bytes.as_bytes(),
+        // concat!(
+        //     "GET / HTTP/1.1\r\n",
+        //     "host: example.com\r\n",
+        //     "connection: close\r\n",
+        //     "\r\n"
+        // )
+        // .as_bytes(),
     )
     .unwrap();
     let ciphersuite = tls.conn.negotiated_cipher_suite().unwrap();
@@ -95,5 +102,15 @@ pub async fn call(mut req: Request<Body>) {
 
 #[tokio::test]
 async fn test() {
-    call(Request::default()).await;
+    let domain = "example.com".to_owned();
+
+    let mut req = axum::http::Request::new(());
+    *req.method_mut() = hyper::Method::GET;
+    *req.uri_mut() = "/".parse().unwrap();
+
+    let headers = req.headers_mut();
+    headers.insert("Host", domain.parse().unwrap());
+    headers.insert("Connection", "close".parse().unwrap());
+
+    call(req).await;
 }
