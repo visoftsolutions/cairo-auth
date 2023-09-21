@@ -21,6 +21,7 @@ func main(output_ptr: felt*) -> (output_ptr: felt*) {
             x.append(memory[ids.domain + i])
         resp = requests.post("https://proxy.test/request", json={"domain": x}, verify=False)
         ids.status = resp.json()["status_code"]
+        print(resp.json());
     %}
 
     assert output_ptr[0] = status;
