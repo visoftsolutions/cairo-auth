@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use axum::http::{response, Request};
+use axum::http::Request;
 use rustls::{ClientConfig, ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
 
 fn serialize_request<T>(req: Request<T>) -> String {
@@ -43,6 +43,7 @@ pub fn rustls_config() -> ClientConfig {
 
 pub type ConnectionResult = (Vec<u8>, Vec<Vec<u8>>, Vec<u8>);
 
+/// Sends a request to the proxy server and returns the response, together with certificates and connection secrets.
 pub async fn call<T>(req: Request<T>) -> ConnectionResult {
     let config = Arc::new(rustls_config()); // TODO: move to global state
 

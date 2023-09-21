@@ -10,14 +10,13 @@ pub struct Request {
 }
 
 impl Request {
+    /// Converts the request data to a proxy request
     pub fn to_request(self) -> axum::http::Request<()> {
-        let _body = ();
-        let _path = "/";
+        let body = ();
         let domain = String::from_utf8(self.domain).expect("domain is not valid");
-        // let url = ["https://", &domain, path].join("");
         let uri = "/";
 
-        let mut req = axum::http::Request::new(());
+        let mut req = axum::http::Request::new(body);
         *req.method_mut() = Method::GET;
         *req.uri_mut() = uri.parse().expect("uri is not valid");
 
