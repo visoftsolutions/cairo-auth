@@ -1,23 +1,12 @@
-mod api;
-mod shutdown_signal;
-
-use std::{
-    io::{Read, Write},
-    net::TcpStream,
-    sync::Arc,
-};
-
 use axum::{
-    body::Body,
-    http::Request,
-    middleware,
-    response::{IntoResponse, Response},
     routing::{get, post},
     Router,
 };
-use rustls::{ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
 
-use crate::{api::request, communication::call};
+mod api;
+mod shutdown_signal;
+
+use crate::communication::call;
 
 mod communication;
 

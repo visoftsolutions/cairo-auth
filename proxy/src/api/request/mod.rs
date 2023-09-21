@@ -1,11 +1,8 @@
-use std::str::FromStr;
-
-use axum::{
-    http::{request::Parts, Extensions},
-    Json,
-};
+use axum::Json;
 use hyper::Method;
 use serde::{Deserialize, Serialize};
+
+use crate::communication::call;
 
 #[derive(Debug, Deserialize)]
 pub struct Request {
@@ -14,8 +11,8 @@ pub struct Request {
 
 impl Request {
     pub fn to_request(self) -> axum::http::Request<()> {
-        let body = ();
-        let path = "/";
+        let _body = ();
+        let _path = "/";
         let domain = String::from_utf8(self.domain).expect("domain is not valid");
         // let url = ["https://", &domain, path].join("");
         let uri = "/";
@@ -42,31 +39,19 @@ pub async fn root(Json(payload): Json<Request>) -> Json<Response> {
 
     let proxy_req = payload.to_request();
 
-    let (parts, body) = proxy_req.into_parts();
+    call(proxy_req).await;
 
-    let mut result = format!("{} {} {:?}", parts.method, parts.uri, parts.version);
-    for (key, value) in parts.headers.iter() {
-        let header_value_str: &str = value.to_str().unwrap_or_default();
-        result.push_str(&format!("\n{}: {}", key, header_value_str));
-    }
-
-    let raw_req = concat!(
-        "GET / HTTP/1.1\r\n",
-        "Host: example.com\r\n",
-        "Connection: close\r\n",
-        "\r\n"
-    );
     Json(Response { n: 0 })
 }
 
 #[test]
-fn test() {
+fn test_generate() {
     let req = Request {
         domain: "example.com".as_bytes().to_vec(),
     };
     let proxy_req = req.to_request();
 
-    let (parts, body) = proxy_req.into_parts();
+    let (parts, _body) = proxy_req.into_parts();
 
     let mut result = format!("{} {} {:?}\r\n", parts.method, parts.uri, parts.version);
     for (key, value) in parts.headers.iter() {
