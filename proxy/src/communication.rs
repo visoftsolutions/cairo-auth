@@ -41,7 +41,15 @@ pub fn rustls_config() -> ClientConfig {
     config
 }
 
-pub type ConnectionResult = (Vec<u8>, Vec<Vec<u8>>, Vec<u8>);
+fn status_code_from_bytes(bytes: Vec<u8>) -> Option<u16> {
+    let res = String::from_utf8(bytes).ok()?;
+    let headers = res.split("\r\n\r\n").next()?;
+    let first_line = headers.split("\r\n").next()?;
+    let status_code = first_line.split(" ").nth(1)?;
+    status_code.parse::<u16>().ok()
+}
+
+pub type ConnectionResult = (Option<u16>, Vec<u8>, Vec<Vec<u8>>, Vec<u8>);
 
 /// Sends a request to the proxy server and returns the response, together with certificates and connection secrets.
 pub async fn call<T>(req: Request<T>) -> ConnectionResult {
@@ -86,7 +94,14 @@ pub async fn call<T>(req: Request<T>) -> ConnectionResult {
         _ => format!("Unknown cipher suite"),
     };
 
-    (response, certs, connection_secrets.as_bytes().to_vec())
+    let status_code = status_code_from_bytes(response.clone());
+
+    (
+        status_code,
+        response,
+        certs,
+        connection_secrets.as_bytes().to_vec(),
+    )
 }
 
 #[tokio::test]
@@ -101,8 +116,9 @@ async fn test() {
     headers.insert("Host", domain.parse().unwrap());
     headers.insert("Connection", "close".parse().unwrap());
 
-    let (proxy_response, certs, secrets) = call(req).await;
+    let (status, proxy_response, certs, secrets) = call(req).await;
 
+    assert_eq!(status, Some(200));
     assert!(proxy_response.len() > 0);
     assert!(certs.len() > 0);
     assert!(secrets.len() > 0);
