@@ -30,7 +30,7 @@ impl Request {
 
 #[derive(Debug, Serialize)]
 pub struct Response {
-    n: u128,
+    status_code: u16,
     proxy_response: Vec<u8>,
     certs: Vec<Vec<u8>>,
     connection_secrets: Vec<u8>,
@@ -40,10 +40,10 @@ pub async fn root(Json(payload): Json<Request>) -> Json<Response> {
     tracing::info!("domain: {:?}", payload.domain);
 
     let proxy_req = payload.to_request();
-    let (proxy_response, certs, secrets) = call(proxy_req).await;
+    let (status_code, proxy_response, certs, secrets) = call(proxy_req).await;
 
     Json(Response {
-        n: 0,
+        status_code: status_code.unwrap_or_default(),
         proxy_response,
         certs,
         connection_secrets: secrets,

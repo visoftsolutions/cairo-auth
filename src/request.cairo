@@ -13,17 +13,17 @@ func main(output_ptr: felt*) -> (output_ptr: felt*) {
         ids.domain_len = len(x)
     %}
 
-    local m;
+    local status;
     %{
         import requests
         x = []
         for i in range(ids.domain_len):
             x.append(memory[ids.domain + i])
         resp = requests.post("https://proxy.test/request", json={"domain": x}, verify=False)
-        ids.m = resp.json()["n"]
+        ids.status = resp.json()["status_code"]
     %}
 
-    assert output_ptr[0] = 0;
+    assert output_ptr[0] = status;
 
     // Return the updated output_ptr.
     return (output_ptr=&output_ptr[1]);
