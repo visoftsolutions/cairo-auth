@@ -35,18 +35,18 @@ func main{output_ptr: felt*}() {
     assert output_ptr[0] = status;
     assert output_ptr[1] = secrets_len;
     let output_ptr = output_ptr + 2;
-    let output_ptr = print_output(secrets_len, secrets);
+    print_output(secrets_len, secrets);
 
     // Return the updated output_ptr.
     return ();
 }
 
-func print_output{output_ptr: felt*}(data_len: felt, data: felt*) -> felt* {
+func print_output{output_ptr: felt*}(data_len: felt, data: felt*) {
     if (data_len == 0) {
-        return output_ptr;
+        return ();
     }
-    
     assert output_ptr[0] = data[0];
     let output_ptr = output_ptr + 1;
-    return print_output(data_len - 1, data + 1);
+    print_output(data_len - 1, data + 1);
+    return ();
 }
