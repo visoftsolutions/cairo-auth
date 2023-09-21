@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use axum::http::Request;
+use axum::http::{response, Request};
 use rustls::{ClientConfig, ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
 
 fn serialize_request<T>(req: Request<T>) -> String {
@@ -41,7 +41,9 @@ pub fn rustls_config() -> ClientConfig {
     config
 }
 
-pub async fn call<T>(req: Request<T>) {
+pub type ConnectionResult = (Vec<u8>, Vec<Vec<u8>>, Vec<u8>);
+
+pub async fn call<T>(req: Request<T>) -> ConnectionResult {
     let config = Arc::new(rustls_config()); // TODO: move to global state
 
     let host_value = req
@@ -58,46 +60,32 @@ pub async fn call<T>(req: Request<T>) {
 
     let request_bytes = serialize_request(req);
 
-    tls.write_all(
-        request_bytes.as_bytes(),
-        // concat!(
-        //     "GET / HTTP/1.1\r\n",
-        //     "host: example.com\r\n",
-        //     "connection: close\r\n",
-        //     "\r\n"
-        // )
-        // .as_bytes(),
-    )
-    .unwrap();
-    let ciphersuite = tls.conn.negotiated_cipher_suite().unwrap();
-    writeln!(
-        &mut std::io::stderr(),
-        "Current ciphersuite: {:?}",
-        ciphersuite.suite()
-    )
-    .unwrap();
-    let mut plaintext = Vec::new();
-    tls.read_to_end(&mut plaintext).unwrap();
-    // stdout().write_all(&plaintext).unwrap();
+    tls.write_all(request_bytes.as_bytes()).unwrap();
 
-    conn.peer_certificates()
-        .iter()
-        .for_each(|cert| println!("{:?}", cert));
+    let mut response = Vec::new();
+    tls.read_to_end(&mut response).unwrap();
 
-    match conn.extract_secrets().unwrap().tx.1 {
+    // has to be after reading response, because handshake is lazy
+    let certs = conn
+        .peer_certificates()
+        .into_iter()
+        .map(|cert| format!("{:?}", cert.as_ref()).as_bytes().to_vec())
+        .collect();
+
+    let connection_secrets = match conn.extract_secrets().unwrap().tx.1 {
         ConnectionTrafficSecrets::Aes128Gcm { key, salt, iv } => {
-            println!("AES128GCM key: {:?}, salt: {:?}, iv: {:?}", key, salt, iv);
+            format!("AES128GCM key: {:?}, salt: {:?}, iv: {:?}", key, salt, iv)
         }
         ConnectionTrafficSecrets::Aes256Gcm { key, salt, iv } => {
-            println!("AES256GCM key: {:?}, salt: {:?}, iv: {:?}", key, salt, iv);
+            format!("AES256GCM key: {:?}, salt: {:?}, iv: {:?}", key, salt, iv)
         }
         ConnectionTrafficSecrets::Chacha20Poly1305 { key, iv } => {
-            println!("Chacha20Poly1305 key: {:?}, iv: {:?}", key, iv);
+            format!("Chacha20Poly1305 key: {:?}, iv: {:?}", key, iv)
         }
-        _ => {
-            println!("Unknown ciphersuite");
-        }
-    }
+        _ => format!("Unknown cipher suite"),
+    };
+
+    (response, certs, connection_secrets.as_bytes().to_vec())
 }
 
 #[tokio::test]
@@ -112,5 +100,9 @@ async fn test() {
     headers.insert("Host", domain.parse().unwrap());
     headers.insert("Connection", "close".parse().unwrap());
 
-    call(req).await;
+    let (proxy_response, certs, secrets) = call(req).await;
+
+    assert!(proxy_response.len() > 0);
+    assert!(certs.len() > 0);
+    assert!(secrets.len() > 0);
 }

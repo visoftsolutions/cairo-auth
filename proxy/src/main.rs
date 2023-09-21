@@ -6,8 +6,6 @@ use axum::{
 mod api;
 mod shutdown_signal;
 
-use crate::communication::call;
-
 mod communication;
 
 #[tokio::main]
@@ -18,7 +16,6 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(api::root))
-        .route("/call", get(call))
         .route("/sqrt", post(api::sqrt::root))
         .route("/request", post(api::request::root));
 
