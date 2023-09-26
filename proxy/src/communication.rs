@@ -6,6 +6,9 @@ use std::{
 
 use axum::http::Request;
 use rustls::{ClientConfig, ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
+use sha256::digest;
+use webpki::{DNSNameRef, DnsNameRef};
+use x509_parser::prelude::{FromDer, X509Certificate};
 
 fn serialize_request<T>(req: Request<T>) -> String {
     let (parts, _body) = req.into_parts();
@@ -74,9 +77,40 @@ pub async fn call<T>(req: Request<T>) -> ConnectionResult {
     let mut response = Vec::new();
     tls.read_to_end(&mut response).unwrap();
 
-    // has to be after reading response, because handshake is lazy
-    let certs = conn
-        .peer_certificates()
+    // has to be after reading response, because handshake doesn't block
+    let certs = conn.peer_certificates();
+    // let cert = certs.expect("no cert").first().expect("no cert");
+    // let web_cert = webpki::EndEntityCert::try_from(cert.0.as_ref()).expect("cert parsing failed");
+    // let dns_name = DnsNameRef::try_from_ascii_str("example.com").expect("dns name parsing failed");
+    // web_cert
+    //     .verify_is_valid_for_dns_name(dns_name)
+    //     .expect("cert validation failed");
+
+    // let cert_bytes = &cert.0[..];
+
+    // let cert = X509Certificate::from_der(cert.0.as_ref())
+    //     .expect("cert parsing failed")
+    //     .1;
+
+    // cert.verify_signature(None)
+    //     .expect("cert signature verification failed");
+
+    // println!("Cert pk: {:?}", cert.public_key());
+    // println!(
+    //     "Cert sj: {:?}",
+    //     cert.subject().iter_common_name().next().unwrap().as_str()
+    // );
+
+    // let alg = match cert.signature_algorithm.algorithm.to_id_string().as_str() {
+    //     "1.2.840.113549.1.1.11" => 1, // sha256WithRSAEncryption
+    //     _ => 0,
+    // };
+    // println!("Cert alg: {:?}", alg);
+    // println!("Cert sig: {:?}", cert.signature_value.data);
+
+    // let h = digest(cert_bytes);
+
+    let certs = certs
         .into_iter()
         .map(|cert| format!("{:?}", cert.as_ref()).as_bytes().to_vec())
         .collect();
