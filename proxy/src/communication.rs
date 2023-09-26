@@ -6,7 +6,6 @@ use std::{
 
 use axum::http::Request;
 use rustls::{ClientConfig, ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
-use sha256::digest;
 use webpki::{DNSNameRef, DnsNameRef};
 use x509_parser::prelude::{FromDer, X509Certificate};
 
@@ -78,8 +77,8 @@ pub async fn call<T>(req: Request<T>) -> ConnectionResult {
     tls.read_to_end(&mut response).unwrap();
 
     // has to be after reading response, because handshake doesn't block
-    let certs = conn.peer_certificates();
-    // let cert = certs.expect("no cert").first().expect("no cert");
+    let certs = conn.peer_certificates().expect("no cert");
+    // let cert = certs.first().expect("no cert");
     // let web_cert = webpki::EndEntityCert::try_from(cert.0.as_ref()).expect("cert parsing failed");
     // let dns_name = DnsNameRef::try_from_ascii_str("example.com").expect("dns name parsing failed");
     // web_cert
@@ -88,9 +87,30 @@ pub async fn call<T>(req: Request<T>) -> ConnectionResult {
 
     // let cert_bytes = &cert.0[..];
 
-    // let cert = X509Certificate::from_der(cert.0.as_ref())
+    // let parsed = X509Certificate::from_der(cert.0.as_ref())
     //     .expect("cert parsing failed")
     //     .1;
+
+    // let cn = parsed
+    //     .subject()
+    //     .iter_common_name()
+    //     .next()
+    //     .unwrap()
+    //     .as_str()
+    //     .expect("cn parsing failed")
+    //     .as_bytes();
+
+    // let cn_pos = cert_bytes
+    //     .windows(cn.len())
+    //     .position(|w| w == cn)
+    //     .expect("cn not found");
+    // println!(
+    //     "cn {} is at {} ({}{})",
+    //     String::from_utf8(cn.to_vec()).unwrap(),
+    //     cn_pos,
+    //     cert_bytes[cn_pos],
+    //     cert_bytes[cn_pos + 1]
+    // );
 
     // cert.verify_signature(None)
     //     .expect("cert signature verification failed");
@@ -110,10 +130,7 @@ pub async fn call<T>(req: Request<T>) -> ConnectionResult {
 
     // let h = digest(cert_bytes);
 
-    let certs = certs
-        .into_iter()
-        .map(|cert| format!("{:?}", cert.as_ref()).as_bytes().to_vec())
-        .collect();
+    let certs = certs.iter().map(|cert| cert.0.clone()).collect();
 
     let connection_secrets = match conn.extract_secrets().unwrap().tx.1 {
         ConnectionTrafficSecrets::Aes128Gcm { key, salt, iv } => {
