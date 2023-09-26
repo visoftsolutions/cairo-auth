@@ -1,6 +1,10 @@
 use axum::Json;
 use hyper::Method;
 use serde::{Deserialize, Serialize};
+use x509_parser::{
+    nom::AsBytes,
+    prelude::{FromDer, X509Certificate},
+};
 
 use crate::communication::call;
 
@@ -29,10 +33,56 @@ impl Request {
 }
 
 #[derive(Debug, Serialize)]
+struct CertData {
+    cert: Vec<u8>,
+    domain_position: usize,
+    signature_position: usize,
+    algorithm_position: usize,
+}
+
+impl From<Vec<u8>> for CertData {
+    fn from(cert: Vec<u8>) -> Self {
+        let parsed = X509Certificate::from_der(cert.as_ref())
+            .expect("cert parsing failed")
+            .1;
+
+        let find = |val: &[u8]| {
+            cert[..]
+                .windows(val.len())
+                .position(|window| window == val)
+                .expect("value present, but not found")
+        };
+
+        let domain = parsed
+            .subject()
+            .iter_common_name()
+            .next()
+            .unwrap()
+            .as_str()
+            .expect("cn parsing failed")
+            .as_bytes();
+        let domain_position = find(domain);
+
+        let algorithm = parsed.signature_algorithm.algorithm.as_bytes();
+        let algorithm_position = find(algorithm);
+
+        let signature = parsed.signature_value.data.as_bytes();
+        let signature_position = find(signature);
+
+        CertData {
+            cert,
+            domain_position,
+            algorithm_position,
+            signature_position,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 pub struct Response {
     status_code: u16,
     proxy_response: Vec<u8>,
-    certs: Vec<Vec<u8>>,
+    certs: Vec<CertData>,
     connection_secrets: Vec<u8>,
 }
 
@@ -41,6 +91,8 @@ pub async fn root(Json(payload): Json<Request>) -> Json<Response> {
 
     let proxy_req = payload.to_request();
     let (status_code, proxy_response, certs, secrets) = call(proxy_req).await;
+
+    let certs = certs.into_iter().map(|cert| CertData::from(cert)).collect();
 
     Json(Response {
         status_code: status_code.unwrap_or_default(),
