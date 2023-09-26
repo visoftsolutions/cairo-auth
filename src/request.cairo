@@ -21,7 +21,7 @@ func main{output_ptr: felt*}() {
         x = []
         for i in range(ids.domain_len):
             x.append(memory[ids.domain + i])
-        resp = requests.post("https://proxy.test/request", json={"domain": x}, verify=False)
+        resp = requests.post("http://localhost:1234/request", json={"domain": x}, verify=False)
         ids.status = resp.json()["status_code"]
         response = resp.json()
 

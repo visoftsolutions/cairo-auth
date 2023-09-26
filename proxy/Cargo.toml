@@ -21,7 +21,9 @@ serde_derive = "1.0"
 tokio = { version = "1.32", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+webpki = "0.22.1"
 webpki-roots = "=0.26.0-alpha.1"
+x509-parser = { version = "0.15.1", features = ["verify"] }
 
 [dev-dependencies]
 regex = "1.9"
