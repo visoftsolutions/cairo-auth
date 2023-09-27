@@ -16,6 +16,10 @@ func main{output_ptr: felt*}() {
     local status;
     local secrets: felt*;
     local secrets_len: felt;
+    local cert: felt*;
+    local cert_len: felt;
+
+    local domain_end: felt;
     %{
         import requests
         x = []
@@ -30,12 +34,23 @@ func main{output_ptr: felt*}() {
         for i, val in enumerate(resp_secrets):
             memory[secrets + i] = val
         ids.secrets_len = len(resp_secrets)
+
+        resp_first_cert_data = response["cert"]
+        ids.domain_end = resp_first_cert_data["domain_end"]
+
+        resp_cert = resp_first_cert_data["data"]
+        ids.cert = cert = segments.add()
+        for i, val in enumerate(resp_cert):
+            memory[cert + i] = val
+        ids.cert_len = len(resp_cert)
     %}
 
     assert output_ptr[0] = status;
     assert output_ptr[1] = secrets_len;
     let output_ptr = output_ptr + 2;
     print_output(secrets_len, secrets);
+
+    assert_equal_from_end(domain + domain_len - 1, cert + domain_end - 1, domain_len);
 
     // Return the updated output_ptr.
     return ();
@@ -48,5 +63,14 @@ func print_output{output_ptr: felt*}(data_len: felt, data: felt*) {
     assert output_ptr[0] = data[0];
     let output_ptr = output_ptr + 1;
     print_output(data_len - 1, data + 1);
+    return ();
+}
+
+func assert_equal_from_end(a: felt*, b: felt*, len: felt) {
+    if (len != 0) {
+        return ();
+    } 
+    assert a[0] = b[0];
+    assert_equal_from_end(a - 1, b - 1, len - 1);
     return ();
 }

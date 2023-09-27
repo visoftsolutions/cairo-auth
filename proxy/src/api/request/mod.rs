@@ -10,7 +10,7 @@ use crate::communication::call;
 
 #[derive(Debug, Deserialize)]
 pub struct Request {
-    domain: Vec<u8>,
+    pub domain: Vec<u8>,
 }
 
 impl Request {
@@ -32,12 +32,12 @@ impl Request {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Default)]
 struct CertData {
-    cert: Vec<u8>,
-    domain_position: usize,
-    signature_position: usize,
-    algorithm_position: usize,
+    data: Vec<u8>,
+    domain_end: usize,
+    signature_offset: usize,
+    algorithm_offset: usize,
 }
 
 impl From<Vec<u8>> for CertData {
@@ -53,51 +53,101 @@ impl From<Vec<u8>> for CertData {
                 .expect("value present, but not found")
         };
 
-        let domain = parsed
-            .subject()
-            .iter_common_name()
-            .next()
-            .unwrap()
-            .as_str()
-            .expect("cn parsing failed")
-            .as_bytes();
-        let domain_position = find(domain);
-
         let algorithm = parsed.signature_algorithm.algorithm.as_bytes();
-        let algorithm_position = find(algorithm);
+        let algorithm_offset = find(algorithm);
 
         let signature = parsed.signature_value.data.as_bytes();
-        let signature_position = find(signature);
+        let signature_offset = find(signature);
 
         CertData {
-            cert,
-            domain_position,
-            algorithm_position,
-            signature_position,
+            data: cert,
+            domain_end: 0,
+            algorithm_offset,
+            signature_offset,
         }
     }
+}
+
+fn find_matching<'a>(whole: &'a [u8], small: &[u8]) -> Option<(Vec<u8>, usize)> {
+    let mut skip = 0;
+
+    loop {
+        let next_dot = match small[skip..]
+            .iter()
+            .position(|&v| v.to_ascii_lowercase() == '.' as u8)
+        {
+            Some(pos) => pos + 1,
+            None => break None,
+        };
+
+        let position_in_whole = whole
+            .windows(small[skip..].len())
+            .position(|w| w == &small[skip..]);
+
+        if let Some(offset) = position_in_whole {
+            let end: usize = offset + small[skip..].len();
+            break Some((whole[offset..end].to_vec(), offset));
+        } else {
+            skip += next_dot;
+        }
+    }
+
+    // let c = a
+    //     .iter()
+    //     .rev()
+    //     .zip(b.iter().rev())
+    //     .take_while(|(a, b)| a == b)
+    //     .count();
+
+    // println!("c: {}", c);
+
+    // c
 }
 
 #[derive(Debug, Serialize)]
 pub struct Response {
     status_code: u16,
     proxy_response: Vec<u8>,
-    certs: Vec<CertData>,
+    cert: CertData,
     connection_secrets: Vec<u8>,
 }
 
 pub async fn root(Json(payload): Json<Request>) -> Json<Response> {
     tracing::info!("domain: {:?}", payload.domain);
 
+    let domain = payload.domain.clone();
     let proxy_req = payload.to_request();
     let (status_code, proxy_response, certs, secrets) = call(proxy_req).await;
 
-    let certs = certs.into_iter().map(|cert| CertData::from(cert)).collect();
+    let certs: Vec<CertData> = certs.into_iter().map(Into::into).collect();
+    let best = certs
+        .into_iter()
+        .map(|c| {
+            let matching = find_matching(&c.data[..], &domain[..]).unwrap_or_default();
+            (c, matching)
+        })
+        .fold((CertData::default(), (vec![], 0)), |c, v| {
+            if v.1 .0.len() > c.1 .0.len() {
+                v
+            } else {
+                c
+            }
+        });
+
+    let (found_domain, found_offset) = best.1;
+    let domain_end = if found_domain == &domain[..] {
+        found_offset + found_domain.len()
+    } else {
+        unimplemented!("only exact domain matches supported")
+    };
+
+    let mut cert = best.0;
+    cert.domain_end = domain_end;
 
     Json(Response {
         status_code: status_code.unwrap_or_default(),
         proxy_response,
-        certs,
+        cert,
         connection_secrets: secrets,
     })
 }
@@ -125,4 +175,13 @@ fn test_generate() {
         "\r\n"
     );
     assert_eq!(result, raw_req);
+}
+
+#[test]
+fn test_find_matching() {
+    let whole = "some.subdomain.at.example.com.and.the.rest".as_bytes();
+    let small = "not.example.com".as_bytes();
+
+    let result = find_matching(whole, small);
+    assert_eq!(result, Some(("example.com".as_bytes().to_vec(), 18)));
 }
