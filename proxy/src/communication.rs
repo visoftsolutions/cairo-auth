@@ -6,8 +6,6 @@ use std::{
 
 use axum::http::Request;
 use rustls::{ClientConfig, ConnectionTrafficSecrets, OwnedTrustAnchor, RootCertStore};
-use webpki::{DNSNameRef, DnsNameRef};
-use x509_parser::prelude::{FromDer, X509Certificate};
 
 fn serialize_request<T>(req: Request<T>) -> String {
     let (parts, _body) = req.into_parts();
