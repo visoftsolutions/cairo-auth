@@ -113,9 +113,13 @@ pub struct Response {
 }
 
 pub async fn root(Json(payload): Json<Request>) -> Json<Response> {
-    tracing::info!("domain: {:?}", payload.domain);
-
     let domain = payload.domain.clone();
+    tracing::info!(
+        "domain: {}",
+        String::from_utf8(domain).expect("domain is not valid")
+    );
+    let domain = payload.domain.clone();
+
     let proxy_req = payload.to_request();
     let (status_code, proxy_response, certs, secrets) = call(proxy_req).await;
 
