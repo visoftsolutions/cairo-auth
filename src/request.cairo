@@ -25,7 +25,7 @@ func main{output_ptr: felt*}() {
         x = []
         for i in range(ids.domain_len):
             x.append(memory[ids.domain + i])
-        resp = requests.post("http://localhost:1234/request", json={"domain": x}, verify=False)
+        resp = requests.post("http://proxy.test/request", json={"domain": x})
         ids.status = resp.json()["status_code"]
         response = resp.json()
 
@@ -45,12 +45,7 @@ func main{output_ptr: felt*}() {
         ids.cert_len = len(resp_cert)
     %}
 
-    assert output_ptr[0] = status;
-    assert output_ptr[1] = secrets_len;
-    let output_ptr = output_ptr + 2;
-    print_output(secrets_len, secrets);
-
-    assert_equal_from_end(domain + domain_len - 1, cert + domain_end - 1, domain_len);
+    assert_equal_from_end(domain, cert + domain_end - domain_len, domain_len);
 
     // Return the updated output_ptr.
     return ();
@@ -67,10 +62,10 @@ func print_output{output_ptr: felt*}(data_len: felt, data: felt*) {
 }
 
 func assert_equal_from_end(a: felt*, b: felt*, len: felt) {
-    if (len != 0) {
+    if (len == 0) {
         return ();
     } 
     assert a[0] = b[0];
-    assert_equal_from_end(a - 1, b - 1, len - 1);
+    assert_equal_from_end(a + 1, b + 1, len - 1);
     return ();
 }

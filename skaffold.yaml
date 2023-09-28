@@ -11,5 +11,5 @@ build:
 manifests:
   kustomize:
     paths:
-      - ./k8s
+      # - ./k8s
       - ./proxy/k8s
