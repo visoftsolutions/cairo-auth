@@ -193,7 +193,7 @@ pub async fn call<T>(req: Request<T>) -> ConnectionResult {
     let cloudflare_pk = VerifyingKey::from_encoded_point(&cloudflare_point).unwrap();
 
     // actually loading the signature (didn't work)
-    let signature = Signature::from_der(&der_signature).unwrap();
+    // let signature = Signature::from_der(&der_signature).unwrap();
 
     // let signature = parsed.signature_value.data.as_ref();
     // let signature = Signature::from_bytes(signature);
